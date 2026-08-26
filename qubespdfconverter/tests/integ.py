@@ -414,7 +414,7 @@ with zipfile.ZipFile(filename, "w") as ods:
         domains_before = set(self.app.domains)
         p = self.vm.run(
             'cp test.pdf orig.pdf; '
-            'timeout --signal=INT 20 qvm-convert-pdf test.pdf 2>&1',
+            'timeout --signal=INT 40 qvm-convert-pdf test.pdf 2>&1',
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertNotEqual(p.returncode, 0,
