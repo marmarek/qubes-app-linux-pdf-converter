@@ -165,6 +165,19 @@ with zipfile.ZipFile(filename, "w") as odt:
         if p.returncode != 0:
             self.skipTest('failed to create test odt: {}'.format(stdout))
 
+    def create_doc(self, filename, text):
+        '''Create DOC file with given (textual) content'''
+        source = filename.rsplit('.', 1)[0] + '.odt'
+        self.create_odt(source, text)
+        p = self.vm.run(
+            'libreoffice --headless --convert-to doc --outdir . '
+            '"{}" 2>&1'.format(source),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        if p.returncode != 0:
+            self.skipTest('failed to create test doc: {}'.format(stdout))
+        self.vm.run('rm -f "{}"'.format(source), wait=True)
+
     def create_xlsx(self, filename, text):
         '''Create XLSX file with given (textual) content
 
@@ -559,7 +572,27 @@ with zipfile.ZipFile(filename, "w") as ods:
         self.assertEqual(self.vm.run(
             'diff "orig.odp" "QubesUntrustedPDFs/test.odp"', wait=True), 0)
 
-    def test_011_video(self):
+    def test_011_doc(self):
+        if self.vm.run('command -v libreoffice >/dev/null', wait=True) != 0:
+            self.skipTest('libreoffice not installed')
+        self.create_doc('test.doc', 'This is test')
+        p = self.vm.run(
+            'cp test.doc orig.doc; qvm-convert-file test.doc 2>&1',
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, 'qvm-convert-file failed: {}'.format(stdout))
+        self.assertEqual(
+            self.vm.run('test -r "test.trusted.pdf"', wait=True), 0)
+        trusted_info = self.get_pdfinfo('test.trusted.pdf')
+        self.assertGreaterEqual(int(trusted_info['Pages']), 1)
+
+        self.assertEqual(
+            self.vm.run('test -r "QubesUntrustedPDFs/test.doc"', wait=True), 0)
+        self.assertEqual(self.vm.run(
+            'diff "orig.doc" "QubesUntrustedPDFs/test.doc"', wait=True), 0)
+
+    def test_012_video(self):
         if self.vm.run('command -v ffmpeg >/dev/null', wait=True) != 0:
             self.skipTest('ffmpeg not installed')
         self.create_video('test.mp4')
