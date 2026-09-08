@@ -429,7 +429,7 @@ with zipfile.ZipFile(filename, "w") as ods:
             'cp test.pdf orig.pdf; '
             'timeout --signal=INT 40 qvm-convert-pdf test.pdf 2>&1',
             passio_popen=True)
-        (stdout, _) = p.communicate()
+        (stdout, _) = p.communicate(timeout=60)
         self.assertNotEqual(p.returncode, 0,
             'Expected non-zero exit from interrupted conversion: {}'.format(stdout))
         self.assertNotEqual(
